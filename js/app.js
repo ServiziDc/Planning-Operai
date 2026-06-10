@@ -106,8 +106,27 @@ function avviaApp() {
   if (!state.mese) state.mese = oggiMese();
   if (!state.giorno) state.giorno = oggiData();
   document.getElementById('dayPicker').value = state.giorno;
+  if (state.isAdmin) autoSeedPrimoAvvio();
   caricaConfig();
   ascoltaPlanning();
+}
+
+// Al primo avvio assoluto (nessun operaio in Firestore) carica
+// automaticamente i 25 operai e il planning di giugno 2026 dall'Excel.
+function autoSeedPrimoAvvio() {
+  db.collection('po_config').doc('operai').get().then(function (snap) {
+    if (snap.exists && snap.data().lista && snap.data().lista.length) return;
+    var presetIniziali = ['TELECOM', 'ENI', "C/C BELPO'", 'TORRE DIAMANTE', 'BETA', 'MICRON VIMERCATE', 'BNL VOGHERA', 'BNL PAVIA', 'X DARIO', 'UFF'];
+    var ops = [];
+    ops.push(db.collection('po_config').doc('operai').set({ lista: SEED_GIUGNO.operai }));
+    ops.push(db.collection('po_config').doc('cantieri').set({ lista: presetIniziali }, { merge: true }));
+    ops.push(db.collection('po_planning').doc(SEED_GIUGNO.mese).set({ celle: SEED_GIUGNO.celle }, { merge: true }));
+    return Promise.all(ops).then(function () {
+      console.log('Primo avvio: importati ' + SEED_GIUGNO.operai.length + ' operai e planning giugno 2026.');
+    });
+  }).catch(function (e) {
+    console.warn('Auto-seed non eseguito:', e);
+  });
 }
 
 function caricaConfig() {
