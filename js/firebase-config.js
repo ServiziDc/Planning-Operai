@@ -1,18 +1,15 @@
 // ============================================================
 // CONFIGURAZIONE FIREBASE - Planning Operai Gama Service
-// ============================================================
-// Puoi riutilizzare il progetto Firebase "gama-service" esistente:
-// Console Firebase > Impostazioni progetto > Le tue app > Config
-// Incolla qui i valori del progetto.
+// Progetto: gama-service (stesso di Gestione Ore)
 // ============================================================
 
 const firebaseConfig = {
-  apiKey: "INSERISCI_API_KEY",
+  apiKey: "AIzaSyCp7WCI9wWBH1hLNXdYA0LTvRmKYjVo53o",
   authDomain: "gama-service.firebaseapp.com",
   projectId: "gama-service",
-  storageBucket: "gama-service.appspot.com",
-  messagingSenderId: "INSERISCI_SENDER_ID",
-  appId: "INSERISCI_APP_ID"
+  storageBucket: "gama-service.firebasestorage.app",
+  messagingSenderId: "440236038955",
+  appId: "1:440236038955:web:24eaa8dca617b54b1b836e"
 };
 
 // Email con permessi di ADMIN (possono modificare il planning).

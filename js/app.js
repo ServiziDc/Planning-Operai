@@ -59,7 +59,24 @@ function doLogin() {
   var err = document.getElementById('loginError');
   err.textContent = '';
   auth.signInWithEmailAndPassword(email, pass).catch(function (e) {
-    err.textContent = 'Accesso non riuscito: credenziali errate o utente inesistente.';
+    var msg;
+    var code = e && e.code ? e.code : '';
+    if (code === 'auth/invalid-credential' || code === 'auth/wrong-password' || code === 'auth/user-not-found') {
+      msg = 'Email o password errati.';
+    } else if (code === 'auth/invalid-email') {
+      msg = 'Formato email non valido.';
+    } else if (code === 'auth/too-many-requests') {
+      msg = 'Troppi tentativi: riprova tra qualche minuto.';
+    } else if (code === 'auth/network-request-failed') {
+      msg = 'Problema di rete: controlla la connessione.';
+    } else if (code.indexOf('api-key') !== -1 || code === 'auth/invalid-api-key') {
+      msg = 'Configurazione Firebase non valida (controlla js/firebase-config.js).';
+    } else if (code === 'auth/unauthorized-domain') {
+      msg = 'Dominio non autorizzato: aggiungilo in Firebase Authentication > Settings > Authorized domains.';
+    } else {
+      msg = 'Errore: ' + (code || e.message);
+    }
+    err.textContent = msg;
     console.error(e);
   });
 }
