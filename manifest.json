@@ -1,0 +1,17 @@
+{
+  "name": "Planning Operai - Gama Service",
+  "short_name": "Planning",
+  "description": "Foglio presenze e assegnazioni del personale Gama Service",
+  "start_url": "/Planning-Operai/",
+  "scope": "/Planning-Operai/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#e0e0e0",
+  "theme_color": "#2e3036",
+  "icons": [
+    { "src": "/Planning-Operai/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/Planning-Operai/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/Planning-Operai/icon-192-maskable.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable" },
+    { "src": "/Planning-Operai/icon-512-maskable.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
