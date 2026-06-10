@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Planning Operai - Gama Service</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<!-- ==================== LOGIN ==================== -->
+<div id="loginScreen" class="login-screen">
+  <div class="login-box">
+    <div class="login-logo">GAMA <span>SERVICE</span></div>
+    <h1>Planning Operai</h1>
+    <p class="login-sub">Foglio presenze personale</p>
+    <input type="email" id="loginEmail" placeholder="Email" autocomplete="username">
+    <input type="password" id="loginPassword" placeholder="Password" autocomplete="current-password">
+    <button id="btnLogin" class="btn btn-primary btn-block">Accedi</button>
+    <div id="loginError" class="login-error"></div>
+  </div>
+</div>
+
+<!-- ==================== APP ==================== -->
+<div id="appScreen" class="app-screen" style="display:none;">
+
+  <header class="topbar">
+    <div class="topbar-left">
+      <div class="topbar-logo">GAMA <span>SERVICE</span></div>
+      <div class="topbar-title">Planning Operai</div>
+    </div>
+    <div class="topbar-right">
+      <span id="userBadge" class="user-badge"></span>
+      <button id="btnLogout" class="btn btn-ghost">Esci</button>
+    </div>
+  </header>
+
+  <nav class="tabs">
+    <button class="tab active" data-view="grid">📅 Mese</button>
+    <button class="tab" data-view="day">📋 Giorno</button>
+    <button class="tab" data-view="pattern" id="tabPattern">🔁 Pattern</button>
+    <button class="tab" data-view="settings" id="tabSettings">⚙️ Gestione</button>
+  </nav>
+
+  <div class="month-bar">
+    <button id="btnPrevMonth" class="btn btn-ghost">◀</button>
+    <div id="monthLabel" class="month-label"></div>
+    <button id="btnNextMonth" class="btn btn-ghost">▶</button>
+    <button id="btnExport" class="btn btn-secondary">⬇ Excel</button>
+  </div>
+
+  <!-- VISTA MESE -->
+  <main id="viewGrid" class="view">
+    <div class="group-filter" id="groupFilter"></div>
+    <div class="grid-wrap" id="gridWrap"></div>
+    <div class="legend">
+      <span class="lg lg-assenza">Assenza</span>
+      <span class="lg lg-ferie">Ferie</span>
+      <span class="lg lg-uff">Ufficio</span>
+      <span class="lg lg-malattia">Malattia</span>
+      <span class="lg lg-permesso">Permesso</span>
+      <span class="lg lg-weekend">Weekend</span>
+    </div>
+  </main>
+
+  <!-- VISTA GIORNO -->
+  <main id="viewDay" class="view" style="display:none;">
+    <div class="day-nav">
+      <button id="btnPrevDay" class="btn btn-ghost">◀</button>
+      <input type="date" id="dayPicker" class="day-picker">
+      <button id="btnNextDay" class="btn btn-ghost">▶</button>
+    </div>
+    <div id="dayList"></div>
+  </main>
+
+  <!-- VISTA PATTERN -->
+  <main id="viewPattern" class="view" style="display:none;">
+    <div class="card">
+      <h2>Applica pattern ricorrente</h2>
+      <p class="hint">Assegna lo stesso cantiere a uno o più operai per un intervallo di date (utile per i presidianti: es. TELECOM lun-ven per tutto il mese).</p>
+      <label>Operai</label>
+      <div id="patternOperai" class="check-list"></div>
+      <label>Cantiere / destinazione</label>
+      <input type="text" id="patternCantiere" list="cantieriList" placeholder="Es. TELECOM">
+      <div class="row2">
+        <div><label>Dal</label><input type="date" id="patternDal"></div>
+        <div><label>Al</label><input type="date" id="patternAl"></div>
+      </div>
+      <label class="check-inline"><input type="checkbox" id="patternFeriali" checked> Solo giorni feriali (lun-ven)</label>
+      <label class="check-inline"><input type="checkbox" id="patternSovrascrivi"> Sovrascrivi celle già compilate</label>
+      <button id="btnApplyPattern" class="btn btn-primary">Applica pattern</button>
+      <div id="patternResult" class="result-msg"></div>
+    </div>
+  </main>
+
+  <!-- VISTA GESTIONE -->
+  <main id="viewSettings" class="view" style="display:none;">
+    <div class="card">
+      <h2>Operai</h2>
+      <div id="operaiList"></div>
+      <div class="add-row">
+        <input type="text" id="newOperaioNome" placeholder="Nome e cognome">
+        <select id="newOperaioGruppo">
+          <option value="PERSONALE">PERSONALE</option>
+          <option value="PRESIDIANTI">PRESIDIANTI</option>
+          <option value="ARTIGIANI">ARTIGIANI</option>
+        </select>
+        <button id="btnAddOperaio" class="btn btn-primary">+ Aggiungi</button>
+      </div>
+    </div>
+    <div class="card">
+      <h2>Cantieri preferiti (preset)</h2>
+      <p class="hint">Appaiono come scelte rapide quando compili una cella.</p>
+      <div id="cantieriListUI"></div>
+      <div class="add-row">
+        <input type="text" id="newCantiere" placeholder="Nome cantiere">
+        <button id="btnAddCantiere" class="btn btn-primary">+ Aggiungi</button>
+      </div>
+    </div>
+    <div class="card">
+      <h2>Importazione dati</h2>
+      <p class="hint">Importa operai e planning di GIUGNO 2026 dal foglio Excel originale (solo al primo avvio).</p>
+      <button id="btnSeed" class="btn btn-secondary">Importa dati giugno 2026</button>
+      <div id="seedResult" class="result-msg"></div>
+    </div>
+  </main>
+
+</div>
+
+<!-- ==================== MODAL CELLA ==================== -->
+<div id="cellModal" class="modal-overlay" style="display:none;">
+  <div class="modal">
+    <div class="modal-head">
+      <div>
+        <div id="modalOperaio" class="modal-operaio"></div>
+        <div id="modalData" class="modal-data"></div>
+      </div>
+      <button id="btnCloseModal" class="btn btn-ghost">✕</button>
+    </div>
+    <div class="quick-chips">
+      <button class="chip chip-assenza" data-val="ASSENZA">ASSENZA</button>
+      <button class="chip chip-ferie" data-val="FERIE">FERIE</button>
+      <button class="chip chip-uff" data-val="UFF">UFF</button>
+      <button class="chip chip-malattia" data-val="MALATTIA">MALATTIA</button>
+      <button class="chip chip-permesso" data-val="PERMESSO">PERMESSO</button>
+    </div>
+    <div class="preset-chips" id="presetChips"></div>
+    <label>Testo libero / note</label>
+    <textarea id="modalText" rows="3" placeholder="Es. DA BNL SANTA MARGHERITA A BNL CREMA ATTIVITÀ DI MOOVING"></textarea>
+    <div class="modal-actions">
+      <button id="btnClearCell" class="btn btn-danger">Svuota</button>
+      <button id="btnSaveCell" class="btn btn-primary">Salva</button>
+    </div>
+  </div>
+</div>
+
+<datalist id="cantieriList"></datalist>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="js/firebase-config.js"></script>
+<script src="js/seed-giugno-2026.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>

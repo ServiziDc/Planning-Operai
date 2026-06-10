@@ -1,0 +1,30 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ===== PLANNING OPERAI =====
+    // Aggiungi queste regole PRIMA di eventuali regole generiche.
+    function isPlanningAdmin() {
+      return request.auth != null && (
+        request.auth.token.email in [
+          'simox91.st@gmail.com',
+          'simone.terragni@gama-service.com',
+          'amministrazione@gama-service.com'
+        ]
+        || get(/databases/$(database)/documents/utenti/$(request.auth.uid)).data.ruolo == 'admin'
+      );
+    }
+
+    match /po_config/{doc} {
+      allow read: if request.auth != null;
+      allow write: if isPlanningAdmin();
+    }
+
+    match /po_planning/{mese} {
+      allow read: if request.auth != null;
+      allow write: if isPlanningAdmin();
+    }
+
+    // ... qui sotto le altre regole già esistenti del progetto ...
+  }
+}
