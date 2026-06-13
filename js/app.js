@@ -123,9 +123,28 @@ function autoSeedPrimoAvvio() {
     ops.push(db.collection('po_planning').doc(SEED_GIUGNO.mese).set({ celle: SEED_GIUGNO.celle }, { merge: true }));
     return Promise.all(ops).then(function () {
       console.log('Primo avvio: importati ' + SEED_GIUGNO.operai.length + ' operai e planning giugno 2026.');
+      seedPresidiFuturi();
     });
   }).catch(function (e) {
     console.warn('Auto-seed non eseguito:', e);
+  });
+}
+
+// Pre-imposta i presidi fissi dei presidianti per luglio-settembre 2026
+// (solo se quei mesi sono ancora vuoti). Non sovrascrive nulla di esistente.
+function seedPresidiFuturi() {
+  if (typeof SEED_PRESIDI === 'undefined') return;
+  Object.keys(SEED_PRESIDI).forEach(function (mese) {
+    db.collection('po_planning').doc(mese).get().then(function (snap) {
+      var esistenti = (snap.exists && snap.data().celle) ? snap.data().celle : {};
+      var nuove = {};
+      var src = SEED_PRESIDI[mese];
+      Object.keys(src).forEach(function (k) { if (!esistenti[k]) nuove[k] = src[k]; });
+      if (Object.keys(nuove).length) {
+        db.collection('po_planning').doc(mese).set({ celle: nuove }, { merge: true });
+        console.log('Presidi pre-impostati per ' + mese + ': ' + Object.keys(nuove).length + ' celle.');
+      }
+    });
   });
 }
 

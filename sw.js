@@ -1,15 +1,16 @@
 // Service Worker - Planning Operai Gama Service
 // Strategia network-first: prende sempre la versione online,
 // usa la cache solo se sei offline (evita problemi di file vecchi).
-var CACHE = 'planning-operai-v1';
+var CACHE = 'planning-operai-v2';
 var BASE = '/Planning-Operai/';
 var CORE = [
   BASE,
   BASE + 'index.html',
-  BASE + 'css/style.css?v=3',
-  BASE + 'js/firebase-config.js?v=3',
-  BASE + 'js/seed-giugno-2026.js?v=3',
-  BASE + 'js/app.js?v=3',
+  BASE + 'css/style.css?v=4',
+  BASE + 'js/firebase-config.js?v=4',
+  BASE + 'js/seed-giugno-2026.js?v=4',
+  BASE + 'js/seed-presidi-lug-set.js?v=4',
+  BASE + 'js/app.js?v=4',
   BASE + 'icon-192.png',
   BASE + 'icon-512.png'
 ];
