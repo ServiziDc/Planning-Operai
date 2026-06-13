@@ -106,7 +106,7 @@ function avviaApp() {
   if (!state.mese) state.mese = oggiMese();
   if (!state.giorno) state.giorno = oggiData();
   document.getElementById('dayPicker').value = state.giorno;
-  if (state.isAdmin) autoSeedPrimoAvvio();
+  if (state.isAdmin) { autoSeedPrimoAvvio(); seedPresidiFuturi(); }
   caricaConfig();
   ascoltaPlanning();
 }
@@ -123,7 +123,6 @@ function autoSeedPrimoAvvio() {
     ops.push(db.collection('po_planning').doc(SEED_GIUGNO.mese).set({ celle: SEED_GIUGNO.celle }, { merge: true }));
     return Promise.all(ops).then(function () {
       console.log('Primo avvio: importati ' + SEED_GIUGNO.operai.length + ' operai e planning giugno 2026.');
-      seedPresidiFuturi();
     });
   }).catch(function (e) {
     console.warn('Auto-seed non eseguito:', e);
@@ -132,19 +131,25 @@ function autoSeedPrimoAvvio() {
 
 // Pre-imposta i presidi fissi dei presidianti per luglio-settembre 2026
 // (solo se quei mesi sono ancora vuoti). Non sovrascrive nulla di esistente.
-function seedPresidiFuturi() {
-  if (typeof SEED_PRESIDI === 'undefined') return;
-  Object.keys(SEED_PRESIDI).forEach(function (mese) {
+function seedPresidiFuturi(cb) {
+  if (typeof SEED_PRESIDI === 'undefined') { if (cb) cb(0); return; }
+  var mesi = Object.keys(SEED_PRESIDI);
+  var totale = 0, fatti = 0;
+  mesi.forEach(function (mese) {
     db.collection('po_planning').doc(mese).get().then(function (snap) {
       var esistenti = (snap.exists && snap.data().celle) ? snap.data().celle : {};
       var nuove = {};
       var src = SEED_PRESIDI[mese];
       Object.keys(src).forEach(function (k) { if (!esistenti[k]) nuove[k] = src[k]; });
-      if (Object.keys(nuove).length) {
-        db.collection('po_planning').doc(mese).set({ celle: nuove }, { merge: true });
-        console.log('Presidi pre-impostati per ' + mese + ': ' + Object.keys(nuove).length + ' celle.');
-      }
-    });
+      var p = Object.keys(nuove).length
+        ? db.collection('po_planning').doc(mese).set({ celle: nuove }, { merge: true })
+        : Promise.resolve();
+      return p.then(function () {
+        totale += Object.keys(nuove).length;
+        if (Object.keys(nuove).length) console.log('Presidi ' + mese + ': ' + Object.keys(nuove).length + ' celle.');
+      });
+    }).catch(function (e) { console.warn('Presidi ' + mese + ':', e); })
+      .then(function () { fatti++; if (fatti === mesi.length && cb) cb(totale); });
   });
 }
 
@@ -581,6 +586,18 @@ document.getElementById('btnSeed').addEventListener('click', function () {
 });
 
 // ---------------- Export Excel ----------------
+document.getElementById('btnSeedPresidi').addEventListener('click', function () {
+  var res = document.getElementById('seedResult');
+  res.className = 'result-msg';
+  res.textContent = 'Caricamento presidi in corso...';
+  seedPresidiFuturi(function (totale) {
+    res.className = 'result-msg ok';
+    res.textContent = totale > 0
+      ? 'Presidi pre-impostati: ' + totale + ' celle su luglio-settembre. Naviga con le frecce ▶ per vederli.'
+      : 'Presidi gia presenti: nessuna cella da aggiungere.';
+  });
+});
+
 document.getElementById('btnExport').addEventListener('click', function () {
   var nd = giorniNelMese(state.mese);
   var p = state.mese.split('-');
