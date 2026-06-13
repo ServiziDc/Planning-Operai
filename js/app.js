@@ -610,6 +610,35 @@ document.getElementById('btnSeedPresidi').addEventListener('click', function () 
   });
 });
 
+document.getElementById('btnPuliciFuturi').addEventListener('click', function () {
+  var res = document.getElementById('seedResult');
+  res.className = 'result-msg';
+  if (typeof SEED_PRESIDI === 'undefined') { res.textContent = 'Dati presidi non caricati.'; return; }
+  if (!confirm('ATTENZIONE: questo SOSTITUISCE completamente luglio, agosto e settembre con i soli presidianti (TELECOM/ENI/BELPO\'/TORRE DIAMANTE). Tutto il resto in quei 3 mesi verra cancellato. Procedere?')) return;
+  res.textContent = 'Pulizia in corso...';
+  var mesi = Object.keys(SEED_PRESIDI);
+  var fatti = 0, errore = null;
+  mesi.forEach(function (mese) {
+    // set SENZA merge = sostituisce l'intero contenuto del mese
+    db.collection('po_planning').doc(mese).set({ celle: SEED_PRESIDI[mese] })
+      .catch(function (e) { errore = (e && e.code ? e.code : '') + ' ' + (e && e.message ? e.message : e); })
+      .then(function () {
+        fatti++;
+        if (fatti === mesi.length) {
+          if (errore) {
+            res.className = 'result-msg err';
+            res.textContent = (errore.indexOf('permission') !== -1)
+              ? '⛔ BLOCCATO dalle regole Firestore. Pubblica le regole aggiornate.'
+              : '⚠️ Errore: ' + errore;
+          } else {
+            res.className = 'result-msg ok';
+            res.textContent = '✅ Fatto. Luglio-settembre ora hanno SOLO i presidianti. Naviga con ▶ per controllare.';
+          }
+        }
+      });
+  });
+});
+
 document.getElementById('btnExport').addEventListener('click', function () {
   var nd = giorniNelMese(state.mese);
   var p = state.mese.split('-');
