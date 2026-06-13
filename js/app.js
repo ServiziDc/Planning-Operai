@@ -140,7 +140,7 @@ function seedPresidiFuturi(cb) {
       var esistenti = (snap.exists && snap.data().celle) ? snap.data().celle : {};
       var nuove = {};
       var src = SEED_PRESIDI[mese];
-      Object.keys(src).forEach(function (k) { if (!esistenti[k]) nuove[k] = src[k]; });
+      Object.keys(src).forEach(function (k) { if (!(k in esistenti)) nuove[k] = src[k]; });
       var p = Object.keys(nuove).length
         ? db.collection('po_planning').doc(mese).set({ celle: nuove }, { merge: true })
         : Promise.resolve();
@@ -403,14 +403,13 @@ function salvaCella(key, valore) {
   if (!key || !state.isAdmin) return Promise.resolve();
   var ref = db.collection('po_planning').doc(state.mese);
   var update = {};
-  if (valore) {
-    update['celle.' + key] = valore;
-  } else {
-    update['celle.' + key] = firebase.firestore.FieldValue.delete();
-  }
+  // Anche quando si svuota, salviamo "" (stringa vuota) come segno di
+  // "vuoto voluto": cosi il caricamento automatico dei presidi NON la
+  // riempie di nuovo. La cella esiste ma e vuota.
+  update['celle.' + key] = valore || '';
   return ref.update(update).catch(function () {
     var doc = { celle: {} };
-    if (valore) doc.celle[key] = valore;
+    doc.celle[key] = valore || '';
     return ref.set(doc, { merge: true });
   });
 }
@@ -473,7 +472,7 @@ document.getElementById('btnApplyPattern').addEventListener('click', function ()
       var esistenti = (snap.exists && snap.data().celle) ? snap.data().celle : {};
       var nuove = {};
       Object.keys(perMese[mese]).forEach(function (k) {
-        if (sovrascrivi || !esistenti[k]) { nuove[k] = perMese[mese][k]; totale++; }
+        if (sovrascrivi || !(k in esistenti)) { nuove[k] = perMese[mese][k]; totale++; }
       });
       if (!Object.keys(nuove).length) return;
       return ref.set({ celle: nuove }, { merge: true });
