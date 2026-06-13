@@ -132,9 +132,9 @@ function autoSeedPrimoAvvio() {
 // Pre-imposta i presidi fissi dei presidianti per luglio-settembre 2026
 // (solo se quei mesi sono ancora vuoti). Non sovrascrive nulla di esistente.
 function seedPresidiFuturi(cb) {
-  if (typeof SEED_PRESIDI === 'undefined') { if (cb) cb(0); return; }
+  if (typeof SEED_PRESIDI === 'undefined') { if (cb) cb({ totale: 0, errore: 'File SEED_PRESIDI non caricato' }); return; }
   var mesi = Object.keys(SEED_PRESIDI);
-  var totale = 0, fatti = 0;
+  var totale = 0, fatti = 0, errore = null;
   mesi.forEach(function (mese) {
     db.collection('po_planning').doc(mese).get().then(function (snap) {
       var esistenti = (snap.exists && snap.data().celle) ? snap.data().celle : {};
@@ -146,10 +146,12 @@ function seedPresidiFuturi(cb) {
         : Promise.resolve();
       return p.then(function () {
         totale += Object.keys(nuove).length;
-        if (Object.keys(nuove).length) console.log('Presidi ' + mese + ': ' + Object.keys(nuove).length + ' celle.');
+        if (Object.keys(nuove).length) console.log('Presidi ' + mese + ': ' + Object.keys(nuove).length + ' celle scritte.');
       });
-    }).catch(function (e) { console.warn('Presidi ' + mese + ':', e); })
-      .then(function () { fatti++; if (fatti === mesi.length && cb) cb(totale); });
+    }).catch(function (e) {
+      errore = (e && e.code ? e.code : '') + ' ' + (e && e.message ? e.message : e);
+      console.warn('Presidi ' + mese + ' ERRORE:', e);
+    }).then(function () { fatti++; if (fatti === mesi.length && cb) cb({ totale: totale, errore: errore }); });
   });
 }
 
@@ -590,11 +592,21 @@ document.getElementById('btnSeedPresidi').addEventListener('click', function () 
   var res = document.getElementById('seedResult');
   res.className = 'result-msg';
   res.textContent = 'Caricamento presidi in corso...';
-  seedPresidiFuturi(function (totale) {
-    res.className = 'result-msg ok';
-    res.textContent = totale > 0
-      ? 'Presidi pre-impostati: ' + totale + ' celle su luglio-settembre. Naviga con le frecce ▶ per vederli.'
-      : 'Presidi gia presenti: nessuna cella da aggiungere.';
+  seedPresidiFuturi(function (r) {
+    if (r.errore) {
+      res.className = 'result-msg err';
+      if (r.errore.indexOf('permission') !== -1 || r.errore.indexOf('insufficient') !== -1) {
+        res.textContent = '⛔ SCRITTURA BLOCCATA dalle regole Firestore. Devi pubblicare le regole aggiornate (blocco po_planning) nella Console Firebase. Dettaglio: ' + r.errore;
+      } else {
+        res.textContent = '⚠️ Errore: ' + r.errore;
+      }
+    } else if (r.totale > 0) {
+      res.className = 'result-msg ok';
+      res.textContent = '✅ Presidi pre-impostati: ' + r.totale + ' celle su luglio-settembre. Naviga con ▶ per vederli.';
+    } else {
+      res.className = 'result-msg ok';
+      res.textContent = 'Presidi gia presenti: nessuna cella nuova da aggiungere.';
+    }
   });
 });
 
