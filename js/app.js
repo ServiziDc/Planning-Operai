@@ -638,6 +638,79 @@ document.getElementById('btnPuliciFuturi').addEventListener('click', function ()
   });
 });
 
+// ---------------- Import permessi approvati ----------------
+function normalizzaNomePlanning(s) {
+  return (s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .toUpperCase().replace(/[^A-Z0-9]+/g, ' ').trim();
+}
+
+function trovaOperaioPlanning(nome) {
+  var target = normalizzaNomePlanning(nome);
+  var targetInv = target.split(' ').reverse().join(' ');
+  for (var i = 0; i < state.operai.length; i++) {
+    var n = normalizzaNomePlanning(state.operai[i].nome);
+    if (n === target || n === targetInv) return state.operai[i];
+  }
+  var parole = target.split(' ');
+  for (var j = 0; j < state.operai.length; j++) {
+    var n2 = ' ' + normalizzaNomePlanning(state.operai[j].nome) + ' ';
+    var tutte = true;
+    for (var w = 0; w < parole.length; w++) { if (n2.indexOf(' ' + parole[w] + ' ') === -1) { tutte = false; break; } }
+    if (tutte) return state.operai[j];
+  }
+  return null;
+}
+
+document.getElementById('btnImportPermessi').addEventListener('click', function () {
+  var res = document.getElementById('permessiResult');
+  res.className = 'result-msg';
+  res.textContent = 'Lettura permessi approvati in corso...';
+  db.collection('permessi').where('stato', '==', 'approvato').get().then(function (snap) {
+    if (snap.empty) { res.textContent = 'Nessun permesso approvato trovato.'; return; }
+    var perMese = {}; var nonTrovati = []; var conta = 0;
+    snap.forEach(function (docSnap) {
+      var p = docSnap.data();
+      var op = trovaOperaioPlanning(p.operaioNome);
+      if (!op) { if (nonTrovati.indexOf(p.operaioNome) === -1) nonTrovati.push(p.operaioNome); return; }
+      var valore;
+      if (p.categoria === 'ferie') valore = 'FERIE';
+      else if (p.tipo === 'ore') valore = 'PERMESSO ' + (p.dalle || '') + '-' + (p.alle || '');
+      else valore = 'PERMESSO';
+      var inizio = p.data;
+      var fine = (p.categoria === 'ferie' && p.dataFine) ? p.dataFine : p.data;
+      if (!inizio) return;
+      var d = new Date(inizio + 'T12:00:00');
+      var df = new Date(fine + 'T12:00:00');
+      while (d <= df) {
+        var dow = d.getDay();
+        if (p.categoria !== 'ferie' || (dow >= 1 && dow <= 5)) {
+          var mese = d.getFullYear() + '-' + pad2(d.getMonth() + 1);
+          var gg = pad2(d.getDate());
+          if (!perMese[mese]) perMese[mese] = {};
+          perMese[mese][op.id + '_' + gg] = valore;
+          conta++;
+        }
+        d.setDate(d.getDate() + 1);
+      }
+    });
+    var promesse = [];
+    Object.keys(perMese).forEach(function (mese) {
+      promesse.push(db.collection('po_planning').doc(mese).set({ celle: perMese[mese] }, { merge: true }));
+    });
+    return Promise.all(promesse).then(function () {
+      res.className = 'result-msg ok';
+      var msg = '✅ Segnati ' + conta + ' giorni da ' + snap.size + ' richieste approvate.';
+      if (nonTrovati.length) msg += ' ⚠️ Non abbinati (nome diverso): ' + nonTrovati.join(', ');
+      res.textContent = msg;
+    });
+  }).catch(function (e) {
+    res.className = 'result-msg err';
+    res.textContent = (e && e.code === 'permission-denied')
+      ? '⛔ Lettura permessi bloccata dalle regole Firestore.'
+      : '⚠️ Errore: ' + (e && e.message ? e.message : e);
+  });
+});
+
 document.getElementById('btnExport').addEventListener('click', function () {
   var nd = giorniNelMese(state.mese);
   var p = state.mese.split('-');
