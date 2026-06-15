@@ -670,7 +670,14 @@ document.getElementById('btnImportPermessi').addEventListener('click', function 
     var perMese = {}; var nonTrovati = []; var conta = 0;
     snap.forEach(function (docSnap) {
       var p = docSnap.data();
-      var op = trovaOperaioPlanning(p.operaioNome);
+      var op = null;
+      // 1) abbinamento per UID (esatto), 2) riserva per nome
+      if (p.operaioUid) {
+        for (var oi = 0; oi < state.operai.length; oi++) {
+          if (state.operai[oi].uid === p.operaioUid) { op = state.operai[oi]; break; }
+        }
+      }
+      if (!op) op = trovaOperaioPlanning(p.operaioNome);
       if (!op) { if (nonTrovati.indexOf(p.operaioNome) === -1) nonTrovati.push(p.operaioNome); return; }
       var valore;
       if (p.categoria === 'ferie') valore = 'FERIE';
@@ -708,6 +715,119 @@ document.getElementById('btnImportPermessi').addEventListener('click', function 
     res.textContent = (e && e.code === 'permission-denied')
       ? '⛔ Lettura permessi bloccata dalle regole Firestore.'
       : '⚠️ Errore: ' + (e && e.message ? e.message : e);
+  });
+});
+
+// ---------------- Abbinamento operai <-> Gestione Ore ----------------
+var _utentiGO = []; // cache utenti Gestione Ore
+
+document.getElementById('btnCaricaUtenti').addEventListener('click', function () {
+  var res = document.getElementById('abbinamentoResult');
+  res.className = 'result-msg';
+  res.textContent = 'Caricamento account...';
+  db.collection('utenti').get().then(function (snap) {
+    _utentiGO = [];
+    snap.forEach(function (d) {
+      var u = d.data();
+      _utentiGO.push({
+        uid: d.id,
+        nome: (u.nomeCompleto || ((u.nome || '') + ' ' + (u.cognome || ''))).trim(),
+        email: u.email || ''
+      });
+    });
+    res.textContent = '';
+    renderAbbinamento();
+  }).catch(function (e) {
+    res.className = 'result-msg err';
+    res.textContent = (e && e.code === 'permission-denied')
+      ? '⛔ Lettura account bloccata dalle regole Firestore.'
+      : '⚠️ Errore: ' + (e && e.message ? e.message : e);
+  });
+});
+
+function renderAbbinamento() {
+  var el = document.getElementById('abbinamentoList');
+  var html = '';
+  for (var g = 0; g < GRUPPI.length; g++) {
+    for (var i = 0; i < state.operai.length; i++) {
+      var op = state.operai[i];
+      if (op.gruppo !== GRUPPI[g]) continue;
+      // suggerimento automatico per nome
+      var suggerito = trovaUtenteGOPerNome(op.nome);
+      var optsHtml = '<option value="">— nessun abbinamento —</option>';
+      for (var u = 0; u < _utentiGO.length; u++) {
+        var sel = '';
+        if (op.uid && op.uid === _utentiGO[u].uid) sel = ' selected';
+        else if (!op.uid && suggerito && suggerito.uid === _utentiGO[u].uid) sel = ' selected';
+        optsHtml += '<option value="' + _utentiGO[u].uid + '"' + sel + '>' + esc(_utentiGO[u].nome) + ' (' + esc(_utentiGO[u].email) + ')</option>';
+      }
+      var stato = op.uid ? '✅' : (suggerito ? '🟡' : '⚪');
+      html += '<div class="item-row"><span style="min-width:150px;">' + stato + ' ' + esc(op.nome) + '</span>' +
+        '<select data-opid="' + op.id + '" style="flex:1;padding:7px;border:1px solid var(--border);border-radius:8px;">' + optsHtml + '</select></div>';
+    }
+  }
+  html += '<button id="btnSalvaAbbinamento" class="btn btn-primary" style="margin-top:12px;">Salva abbinamenti</button>';
+  el.innerHTML = html;
+  document.getElementById('btnSalvaAbbinamento').addEventListener('click', salvaAbbinamenti);
+}
+
+function trovaUtenteGOPerNome(nome) {
+  var target = normalizzaNomePlanning(nome);
+  var targetInv = target.split(' ').reverse().join(' ');
+  for (var i = 0; i < _utentiGO.length; i++) {
+    var n = normalizzaNomePlanning(_utentiGO[i].nome);
+    if (n === target || n === targetInv) return _utentiGO[i];
+  }
+  return null;
+}
+
+function salvaAbbinamenti() {
+  var res = document.getElementById('abbinamentoResult');
+  var selects = document.querySelectorAll('#abbinamentoList select');
+  var nuovaLista = state.operai.slice();
+  for (var s = 0; s < selects.length; s++) {
+    var opid = selects[s].getAttribute('data-opid');
+    var uid = selects[s].value;
+    for (var i = 0; i < nuovaLista.length; i++) {
+      if (nuovaLista[i].id === opid) {
+        if (uid) nuovaLista[i] = Object.assign({}, nuovaLista[i], { uid: uid });
+        else { var c = Object.assign({}, nuovaLista[i]); delete c.uid; nuovaLista[i] = c; }
+      }
+    }
+  }
+  db.collection('po_config').doc('operai').set({ lista: nuovaLista }).then(function () {
+    res.className = 'result-msg ok';
+    res.textContent = '✅ Abbinamenti salvati. Ora i permessi si collegano per codice.';
+  }).catch(function (e) {
+    res.className = 'result-msg err';
+    res.textContent = '⚠️ Errore: ' + (e && e.message ? e.message : e);
+  });
+}
+
+document.getElementById('btnApplicaUid').addEventListener('click', function () {
+  var res = document.getElementById('abbinamentoResult');
+  res.className = 'result-msg';
+  // Prende gli UID dal seed e li applica agli operai gia presenti su Firestore
+  var uidDaSeed = {};
+  if (typeof SEED_GIUGNO !== 'undefined' && SEED_GIUGNO.operai) {
+    SEED_GIUGNO.operai.forEach(function (o) { if (o.uid) uidDaSeed[o.id] = o.uid; });
+  }
+  var nuovaLista = state.operai.slice();
+  var applicati = 0;
+  for (var i = 0; i < nuovaLista.length; i++) {
+    var id = nuovaLista[i].id;
+    if (uidDaSeed[id] && nuovaLista[i].uid !== uidDaSeed[id]) {
+      nuovaLista[i] = Object.assign({}, nuovaLista[i], { uid: uidDaSeed[id] });
+      applicati++;
+    }
+  }
+  if (!applicati) { res.className = 'result-msg ok'; res.textContent = 'Abbinamenti gia tutti applicati.'; return; }
+  db.collection('po_config').doc('operai').set({ lista: nuovaLista }).then(function () {
+    res.className = 'result-msg ok';
+    res.textContent = '✅ Applicati ' + applicati + ' abbinamenti UID. I permessi ora si collegano per codice.';
+  }).catch(function (e) {
+    res.className = 'result-msg err';
+    res.textContent = '⚠️ Errore: ' + (e && e.message ? e.message : e);
   });
 });
 

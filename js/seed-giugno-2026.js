@@ -1,10 +1,11 @@
-// Dati COMPLETI importati da FOGLIO_PRESENZE giugno 2026 (riallineato)
+// Dati COMPLETI giugno 2026 + UID account Gestione Ore abbinati
 const SEED_GIUGNO = {
  "operai": [
   {
    "id": "francesco_iarocci",
    "nome": "FRANCESCO IAROCCI",
-   "gruppo": "PERSONALE"
+   "gruppo": "PERSONALE",
+   "uid": "UcEXaUeMiWMwOKdyBMyo0EL6r8Z2"
   },
   {
    "id": "soufiane_ennabati",
@@ -14,52 +15,62 @@ const SEED_GIUGNO = {
   {
    "id": "heorhii_hurzhui",
    "nome": "HEORHII HURZHUI",
-   "gruppo": "PERSONALE"
+   "gruppo": "PERSONALE",
+   "uid": "k0vxkEz0veh0fjZfLRLilRTFtOm2"
   },
   {
    "id": "giuseppe_salcuni",
    "nome": "GIUSEPPE SALCUNI",
-   "gruppo": "PERSONALE"
+   "gruppo": "PERSONALE",
+   "uid": "GMfvvdNVlbZq8LNjhnvnfLXcU7D2"
   },
   {
    "id": "ait_youssef",
    "nome": "AIT YOUSSEF",
-   "gruppo": "PERSONALE"
+   "gruppo": "PERSONALE",
+   "uid": "V5TRVWcTUqNf1ohlEXEe6uniXR63"
   },
   {
    "id": "simone_lugara",
    "nome": "SIMONE LUGARA'",
-   "gruppo": "PERSONALE"
+   "gruppo": "PERSONALE",
+   "uid": "ViNbYq4tPGSG7bOyheImCsapBba2"
   },
   {
    "id": "leonardo_elmekciu",
    "nome": "LEONARDO ELMEKCIU",
-   "gruppo": "PERSONALE"
+   "gruppo": "PERSONALE",
+   "uid": "oFAOY2DMk4NXATUHGbYLZmPE8Lb2"
   },
   {
    "id": "giampietro_mangione",
    "nome": "GIAMPIETRO MANGIONE",
-   "gruppo": "PERSONALE"
+   "gruppo": "PERSONALE",
+   "uid": "8UUQujVb0qVmAVjspZwL5u1se4X2"
   },
   {
    "id": "giovanni_cerone",
    "nome": "GIOVANNI CERONE",
-   "gruppo": "PERSONALE"
+   "gruppo": "PERSONALE",
+   "uid": "as5nwxg4HFMV4lRjXHoIDlTibK83"
   },
   {
    "id": "michele_salcuni",
    "nome": "MICHELE SALCUNI",
-   "gruppo": "PERSONALE"
+   "gruppo": "PERSONALE",
+   "uid": "ZKvSYqHunGWgzVas0hFAgtflE9v2"
   },
   {
    "id": "giovanni_d_oriano",
    "nome": "GIOVANNI D'ORIANO",
-   "gruppo": "PERSONALE"
+   "gruppo": "PERSONALE",
+   "uid": "vnxgsYg3aaSi21rUAFRAfJJXIyB2"
   },
   {
    "id": "simone_terragni",
    "nome": "SIMONE TERRAGNI",
-   "gruppo": "PERSONALE"
+   "gruppo": "PERSONALE",
+   "uid": "OfeebxV2WkcJHJKcUp3FfKQHlfE3"
   },
   {
    "id": "amen_ennabati",
@@ -69,37 +80,44 @@ const SEED_GIUGNO = {
   {
    "id": "erion_doraci",
    "nome": "ERION DORACI",
-   "gruppo": "PRESIDIANTI"
+   "gruppo": "PRESIDIANTI",
+   "uid": "YEyJ1UupsThpmVqp1CuEMlBLD4d2"
   },
   {
    "id": "nicola_sciarra",
    "nome": "NICOLA SCIARRA",
-   "gruppo": "PRESIDIANTI"
+   "gruppo": "PRESIDIANTI",
+   "uid": "cfG3EcSJNLTRxMXUXBzq7P0A6EV2"
   },
   {
    "id": "ahmed_elmalki",
    "nome": "AHMED ELMALKI",
-   "gruppo": "PRESIDIANTI"
+   "gruppo": "PRESIDIANTI",
+   "uid": "u3EZqUqGxDPFSp8mW8UkzTuSphD3"
   },
   {
    "id": "sidhom_nadi",
    "nome": "SIDHOM NADI",
-   "gruppo": "PRESIDIANTI"
+   "gruppo": "PRESIDIANTI",
+   "uid": "5YJX7XegrZVGSIGoBi34CFL8oUH2"
   },
   {
    "id": "valentyn_brusenko",
    "nome": "VALENTYN BRUSENKO",
-   "gruppo": "PRESIDIANTI"
+   "gruppo": "PRESIDIANTI",
+   "uid": "gZpTlQbU8DbQ9UvCl7tqc9n5G853"
   },
   {
    "id": "ivan_hurzhuy",
    "nome": "IVAN HURZHUY",
-   "gruppo": "PRESIDIANTI"
+   "gruppo": "PRESIDIANTI",
+   "uid": "7JfB5oA7QTgKfVWMPNTiTKYjx4T2"
   },
   {
    "id": "giuseppe_figus",
    "nome": "GIUSEPPE FIGUS",
-   "gruppo": "PRESIDIANTI"
+   "gruppo": "PRESIDIANTI",
+   "uid": "pgiyY1k7xZMprHnICLtQWJYOGLm1"
   },
   {
    "id": "pietro_casciello",
