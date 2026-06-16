@@ -9,6 +9,7 @@ var state = {
   isAdmin: false,
   operai: [],          // [{id, nome, gruppo}]
   cantieri: [],        // ["TELECOM", ...]
+  urgenze: [],         // [{id, testo, creato}]
   mese: '',            // "YYYY-MM"
   celle: {},           // { opId_DD: "testo" }
   giorno: '',          // "YYYY-MM-DD" per vista giorno
@@ -165,6 +166,10 @@ function caricaConfig() {
     renderDatalist();
     renderCantieriUI();
   });
+  db.collection('po_config').doc('urgenze').onSnapshot(function (snap) {
+    state.urgenze = (snap.exists && snap.data().lista) ? snap.data().lista : [];
+    renderUrgenze();
+  });
 }
 
 function ascoltaPlanning() {
@@ -182,6 +187,7 @@ function renderTutto() {
   renderDay();
   renderOperaiUI();
   renderPatternOperai();
+  renderUrgenze();
 }
 
 // ---------------- Navigazione mese/giorno ----------------
@@ -232,6 +238,7 @@ for (var ti = 0; ti < tabs.length; ti++) {
     document.getElementById('viewGrid').style.display = (v === 'grid') ? '' : 'none';
     document.getElementById('viewDay').style.display = (v === 'day') ? '' : 'none';
     document.getElementById('viewPattern').style.display = (v === 'pattern') ? '' : 'none';
+    document.getElementById('viewUrgenze').style.display = (v === 'urgenze') ? '' : 'none';
     document.getElementById('viewSettings').style.display = (v === 'settings') ? '' : 'none';
   });
 }
@@ -528,6 +535,68 @@ document.getElementById('btnAddOperaio').addEventListener('click', function () {
   });
 });
 
+// ---------------- Urgenze (blocco note) ----------------
+function renderUrgenze() {
+  // Badge sul tab
+  var badge = document.getElementById('urgenzeBadge');
+  var n = state.urgenze.length;
+  if (badge) {
+    badge.textContent = n;
+    badge.style.display = n > 0 ? '' : 'none';
+  }
+  // Input visibile solo all'admin
+  var addRow = document.getElementById('urgenzeAdd');
+  if (addRow) addRow.style.display = state.isAdmin ? '' : 'none';
+
+  var el = document.getElementById('urgenzeList');
+  if (!el) return;
+  if (!n) { el.innerHTML = '<div class="urgenze-vuoto">Nessuna urgenza in lista. ✅</div>'; return; }
+  // piu recenti in alto
+  var ordinate = state.urgenze.slice().sort(function (a, b) { return (b.creato || 0) - (a.creato || 0); });
+  var html = '';
+  for (var i = 0; i < ordinate.length; i++) {
+    var u = ordinate[i];
+    var data = u.creato ? new Date(u.creato) : null;
+    var dataTxt = data ? (pad2(data.getDate()) + '/' + pad2(data.getMonth() + 1) + ' ' + pad2(data.getHours()) + ':' + pad2(data.getMinutes())) : '';
+    html += '<div class="urgenza-row">' +
+      '<span class="urgenza-testo">' + esc(u.testo) + '</span>' +
+      '<span class="urgenza-data">' + dataTxt + '</span>' +
+      (state.isAdmin ? '<button class="btn btn-danger" data-urg="' + esc(u.id) + '">✓ Assegnata</button>' : '') +
+      '</div>';
+  }
+  el.innerHTML = html;
+  if (state.isAdmin) {
+    var btns = el.querySelectorAll('[data-urg]');
+    for (var b = 0; b < btns.length; b++) {
+      btns[b].addEventListener('click', function () { eliminaUrgenza(this.getAttribute('data-urg')); });
+    }
+  }
+}
+
+function aggiungiUrgenza() {
+  if (!state.isAdmin) return;
+  var input = document.getElementById('newUrgenza');
+  var testo = input.value.trim();
+  if (!testo) return;
+  var nuova = { id: 'u' + Date.now(), testo: testo, creato: Date.now() };
+  var lista = state.urgenze.concat([nuova]);
+  db.collection('po_config').doc('urgenze').set({ lista: lista }).then(function () {
+    input.value = '';
+  }).catch(function (e) { alert('Errore: ' + (e && e.message ? e.message : e)); });
+}
+
+function eliminaUrgenza(id) {
+  if (!state.isAdmin) return;
+  if (!confirm('Segnare questa urgenza come assegnata e rimuoverla dalla lista?')) return;
+  var lista = state.urgenze.filter(function (u) { return u.id !== id; });
+  db.collection('po_config').doc('urgenze').set({ lista: lista });
+}
+
+var _btnAddUrg = document.getElementById('btnAddUrgenza');
+if (_btnAddUrg) _btnAddUrg.addEventListener('click', aggiungiUrgenza);
+var _newUrg = document.getElementById('newUrgenza');
+if (_newUrg) _newUrg.addEventListener('keydown', function (e) { if (e.key === 'Enter') aggiungiUrgenza(); });
+
 // ---------------- Gestione cantieri preset ----------------
 function renderCantieriUI() {
   if (!state.isAdmin) return;
@@ -644,8 +713,25 @@ function normalizzaNomePlanning(s) {
     .toUpperCase().replace(/[^A-Z0-9]+/g, ' ').trim();
 }
 
+// Alias per nomi scritti diversi in Gestione Ore -> id operaio Planning.
+// Chiave = nome normalizzato (MAIUSCOLO, senza accenti/simboli).
+var ALIAS_NOMI = {
+  'LEONARD EKMEKCIU': 'leonardo_elmekciu',
+  'GIOVANNI D ORAINO': 'giovanni_d_oriano',
+  'GIAMPI MAGGIORE': 'giampietro_mangione',
+  'AHMED EL MALKI': 'ahmed_elmalki',
+  'YOUSSEF AIT AICHTE': 'ait_youssef',
+  'SIDHOM BISHO': 'sidhom_nadi'
+};
+
 function trovaOperaioPlanning(nome) {
   var target = normalizzaNomePlanning(nome);
+  // 0) alias diretto
+  if (ALIAS_NOMI[target]) {
+    for (var a = 0; a < state.operai.length; a++) {
+      if (state.operai[a].id === ALIAS_NOMI[target]) return state.operai[a];
+    }
+  }
   var targetInv = target.split(' ').reverse().join(' ');
   for (var i = 0; i < state.operai.length; i++) {
     var n = normalizzaNomePlanning(state.operai[i].nome);

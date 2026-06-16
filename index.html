@@ -11,7 +11,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Planning">
-<link rel="stylesheet" href="css/style.css?v=14">
+<link rel="stylesheet" href="css/style.css?v=16">
 </head>
 <body>
 
@@ -46,6 +46,7 @@
     <button class="tab active" data-view="grid">📅 Mese</button>
     <button class="tab" data-view="day">📋 Giorno</button>
     <button class="tab" data-view="pattern" id="tabPattern">🔁 Pattern</button>
+    <button class="tab" data-view="urgenze" id="tabUrgenze">🚨 Urgenze<span id="urgenzeBadge" class="badge" style="display:none;">0</span></button>
     <button class="tab" data-view="settings" id="tabSettings">⚙️ Gestione</button>
   </nav>
 
@@ -78,6 +79,19 @@
       <button id="btnNextDay" class="btn btn-ghost">▶</button>
     </div>
     <div id="dayList"></div>
+  </main>
+
+  <!-- VISTA URGENZE -->
+  <main id="viewUrgenze" class="view" style="display:none;">
+    <div class="card">
+      <h2>🚨 Urgenze da smistare</h2>
+      <p class="hint">Blocco note delle urgenze. Scrivi una nota, poi quando la assegni a un operaio cancellala. Il pallino rosso mostra quante ne restano.</p>
+      <div id="urgenzeAdd" class="add-row">
+        <input type="text" id="newUrgenza" placeholder="Es. Chiamare cliente BNL Pavia per sopralluogo urgente">
+        <button id="btnAddUrgenza" class="btn btn-primary">+ Aggiungi</button>
+      </div>
+      <div id="urgenzeList"></div>
+    </div>
   </main>
 
   <!-- VISTA PATTERN -->
@@ -183,10 +197,10 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<script src="js/firebase-config.js?v=14"></script>
-<script src="js/seed-giugno-2026.js?v=14"></script>
-<script src="js/seed-presidi-lug-set.js?v=14"></script>
-<script src="js/app.js?v=14"></script>
-<script src="js/pwa-install.js?v=14"></script>
+<script src="js/firebase-config.js?v=16"></script>
+<script src="js/seed-giugno-2026.js?v=16"></script>
+<script src="js/seed-presidi-lug-set.js?v=16"></script>
+<script src="js/app.js?v=16"></script>
+<script src="js/pwa-install.js?v=16"></script>
 </body>
 </html>
