@@ -184,6 +184,17 @@
     <div class="preset-chips" id="presetChips"></div>
     <label>Testo libero / note</label>
     <textarea id="modalText" rows="3" placeholder="Es. DA BNL SANTA MARGHERITA A BNL CREMA ATTIVITÀ DI MOOVING"></textarea>
+    <div class="ripeti-box">
+      <div class="ripeti-row">
+        <label class="ripeti-label">Ripeti per</label>
+        <input type="number" id="ripetiGiorni" min="1" max="60" placeholder="—" style="width:64px;text-align:center;">
+        <span class="ripeti-label">giorni</span>
+      </div>
+      <div class="ripeti-toggle-row">
+        <label class="ripeti-toggle"><input type="checkbox" id="ripetiSabato"> Sabato</label>
+        <label class="ripeti-toggle"><input type="checkbox" id="ripetiDomenica"> Domenica</label>
+      </div>
+    </div>
     <div class="modal-actions">
       <button id="btnClearCell" class="btn btn-danger">Svuota</button>
       <button id="btnSaveCell" class="btn btn-primary">Salva</button>

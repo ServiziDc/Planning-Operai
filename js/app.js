@@ -371,6 +371,10 @@ function apriModal(opId, day) {
   document.getElementById('modalData').textContent = GIORNI_IT[data.getDay()] + ' ' + day + ' ' + MESI_IT[data.getMonth()] + ' ' + data.getFullYear();
   document.getElementById('modalText').value = state.celle[state.editKey] || '';
   renderPresetChips();
+  // Reset sezione ripeti
+  document.getElementById('ripetiGiorni').value = '';
+  document.getElementById('ripetiSabato').checked = false;
+  document.getElementById('ripetiDomenica').checked = false;
   document.getElementById('cellModal').style.display = 'flex';
 }
 
@@ -400,7 +404,65 @@ function chiudiModal() { document.getElementById('cellModal').style.display = 'n
 
 document.getElementById('btnSaveCell').addEventListener('click', function () {
   var v = document.getElementById('modalText').value.trim();
-  salvaCella(state.editKey, v).then(chiudiModal);
+  var nGiorni = parseInt(document.getElementById('ripetiGiorni').value, 10);
+  var inclSabato   = document.getElementById('ripetiSabato').checked;
+  var inclDomenica = document.getElementById('ripetiDomenica').checked;
+
+  // Se non è stato specificato un numero di giorni, salva solo la cella corrente
+  if (!nGiorni || nGiorni < 1 || !state.editKey) {
+    salvaCella(state.editKey, v).then(chiudiModal);
+    return;
+  }
+
+  // Ripeti su più giorni
+  // Ricava operaio e giorno di partenza dalla editKey (formato "opId_GG")
+  var parts = state.editKey.split('_');
+  // L'id operaio può contenere underscore (es. "mario_rossi_01"), il giorno è sempre l'ultimo pezzo
+  var startDay = parseInt(parts[parts.length - 1], 10);
+  var opId = parts.slice(0, parts.length - 1).join('_');
+
+  var meseParts = state.mese.split('-');
+  var anno = parseInt(meseParts[0], 10);
+  var mese = parseInt(meseParts[1], 10); // 1-based
+
+  // Calcola l'ultimo giorno del mese corrente
+  var ultimoDelMese = new Date(anno, mese, 0).getDate();
+
+  var aggiornamenti = {}; // {mese: {key: valore}}
+  var contaGiorni = 0;
+  var d = new Date(anno, mese - 1, startDay);
+
+  while (contaGiorni < nGiorni) {
+    var dow = d.getDay(); // 0=dom, 6=sab
+    var skipSabato   = (dow === 6 && !inclSabato);
+    var skipDomenica = (dow === 0 && !inclDomenica);
+
+    if (!skipSabato && !skipDomenica) {
+      var mm = d.getFullYear() + '-' + pad2(d.getMonth() + 1);
+      var gg = pad2(d.getDate());
+      if (!aggiornamenti[mm]) aggiornamenti[mm] = {};
+      aggiornamenti[mm][opId + '_' + gg] = v;
+      contaGiorni++;
+    }
+    d.setDate(d.getDate() + 1);
+    // Sicurezza: non andare oltre 90 giorni reali per evitare loop infiniti
+    if (d.getDate() > startDay + 90 && d.getMonth() + 1 > mese + 2) break;
+  }
+
+  // Salva tutti i mesi interessati
+  var promesse = Object.keys(aggiornamenti).map(function(mm) {
+    var ref = db.collection('po_planning').doc(mm);
+    var upd = {};
+    Object.keys(aggiornamenti[mm]).forEach(function(k) { upd['celle.' + k] = aggiornamenti[mm][k]; });
+    return ref.update(upd).catch(function() {
+      var doc = { celle: aggiornamenti[mm] };
+      return ref.set(doc, { merge: true });
+    });
+  });
+
+  Promise.all(promesse).then(chiudiModal).catch(function(e) {
+    alert('Errore salvataggio ripeti: ' + e.message);
+  });
 });
 document.getElementById('btnClearCell').addEventListener('click', function () {
   salvaCella(state.editKey, '').then(chiudiModal);

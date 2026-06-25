@@ -152,6 +152,14 @@ table.pgrid { border-collapse: separate; border-spacing: 0; font-size: 12px; min
 .modal label { display: block; font-size: 12px; font-weight: 700; margin: 10px 0 4px; color: var(--muted); }
 .modal textarea { width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 8px; font-size: 14px; resize: vertical; }
 .modal-actions { display: flex; justify-content: space-between; margin-top: 14px; }
+.ripeti-box { margin-top: 12px; background: var(--bg); border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px; }
+.ripeti-row { display: flex; align-items: center; gap: 8px; }
+.ripeti-label { font-size: 12px; font-weight: 700; color: var(--muted); white-space: nowrap; }
+.ripeti-row input[type=number] { border: 1px solid var(--border); border-radius: 6px; padding: 4px 6px; font-size: 14px; background: var(--card); color: var(--text); }
+.ripeti-row input[type=number]::-webkit-inner-spin-button { opacity: 1; }
+.ripeti-toggle-row { display: flex; gap: 16px; margin-top: 8px; }
+.ripeti-toggle { display: flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 700; color: var(--muted); cursor: pointer; }
+.ripeti-toggle input { cursor: pointer; width: 14px; height: 14px; }
 
 @media (max-width: 640px) {
   .pgrid th, .pgrid td { min-width: 92px; font-size: 11px; }
